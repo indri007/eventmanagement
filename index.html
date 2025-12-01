@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventKu - Temukan Event Terbaik di Sekitarmu</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <div class="logo">
+                    <h1>🎉 EventKu</h1>
+                </div>
+                <div class="nav-links">
+                    <a href="/index.html" class="nav-link">Beranda</a>
+                    <a href="" class="nav-link">Event Saya</a>
+                    <a href="#" class="nav-link btn-create" id="createEventBtn">Buat Event</a>
+                    <a href="" class="nav-link">Daftar</a>
+                    <a href="" class="nav-link">Masuk</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="container">
+                <h2>Temukan Event Menarik di Sekitarmu</h2>
+                <p>Jelajahi berbagai acara, konser, workshop, dan kegiatan seru lainnya</p>
+                
+                <div class="search-bar">
+                    <input type="text" id="searchInput" placeholder="Cari event...">
+                    <select id="categoryFilter">
+                        <option value="">Semua Kategori</option>
+                        <option value="musik">Musik</option>
+                        <option value="teknologi">Teknologi</option>
+                        <option value="olahraga">Olahraga</option>
+                        <option value="seni">Seni & Budaya</option>
+                        <option value="bisnis">Bisnis</option>
+                        <option value="makanan">Makanan & Minuman</option>
+                    </select>
+                    <button id="searchBtn">Cari</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Events Grid -->
+        <section class="events-section">
+            <div class="container">
+                <h3>Event Populer</h3>
+                <div id="eventsGrid" class="events-grid">
+                    <!-- Events will be loaded here -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal for Event Details -->
+    <div id="eventModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- Modal for Create Event -->
+    <div id="createEventModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeCreateModal">&times;</span>
+            <h2>Buat Event Baru</h2>
+            <form id="createEventForm">
+                <input type="text" id="eventTitle" placeholder="Judul Event" required>
+                <input type="date" id="eventDate" required>
+                <input type="time" id="eventTime" required>
+                <input type="text" id="eventLocation" placeholder="Lokasi" required>
+                <select id="eventCategory" required>
+                    <option value="">Pilih Kategori</option>
+                    <option value="musik">Musik</option>
+                    <option value="teknologi">Teknologi</option>
+                    <option value="olahraga">Olahraga</option>
+                    <option value="seni">Seni & Budaya</option>
+                    <option value="bisnis">Bisnis</option>
+                    <option value="makanan">Makanan & Minuman</option>
+                </select>
+                <input type="number" id="eventPrice" placeholder="Harga (Rp)" min="0">
+                <textarea id="eventDescription" placeholder="Deskripsi Event" rows="4" required></textarea>
+                <button type="submit" class="btn-submit">Buat Event</button>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 EventKu. Semua hak dilindungi.</p>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
