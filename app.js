@@ -78,6 +78,8 @@ const createEventModal = document.getElementById('createEventModal');
 const createEventBtn = document.getElementById('createEventBtn');
 const closeCreateModal = document.getElementById('closeCreateModal');
 const createEventForm = document.getElementById('createEventForm');
+const hamburger = document.getElementById('hamburger');
+const navLinks = document.getElementById('navLinks');
 
 // Initialize
 displayEvents(events);
@@ -89,8 +91,36 @@ searchInput.addEventListener('keyup', (e) => {
 });
 categoryFilter.addEventListener('change', filterEvents);
 
-createEventBtn.addEventListener('click', () => {
+// Hamburger Menu Toggle
+hamburger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    hamburger.classList.toggle('active');
+    navLinks.classList.toggle('active');
+});
+
+// Close mobile menu when clicking a link
+document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+        if (link.id !== 'createEventBtn') {
+            hamburger.classList.remove('active');
+            navLinks.classList.remove('active');
+        }
+    });
+});
+
+// Close mobile menu when clicking outside
+document.addEventListener('click', (e) => {
+    if (!hamburger.contains(e.target) && !navLinks.contains(e.target)) {
+        hamburger.classList.remove('active');
+        navLinks.classList.remove('active');
+    }
+});
+
+createEventBtn.addEventListener('click', (e) => {
+    e.preventDefault();
     createEventModal.style.display = 'block';
+    hamburger.classList.remove('active');
+    navLinks.classList.remove('active');
 });
 
 closeCreateModal.addEventListener('click', () => {
