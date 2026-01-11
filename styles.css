@@ -898,8 +898,9 @@ entication Styles */
         font-size: 1rem;
         word-break: break-all;
     }
-}/
-* Dashboard Styles */
+}
+
+/* Dashboard Styles */
 .dashboard-modal .modal-content {
     max-width: 95%;
     width: 1200px;
