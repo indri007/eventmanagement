@@ -1,6 +1,6 @@
-# EventKu - Event Management System with PostgreSQL
+# EventKu - Event Management System dengan Next.js
 
-EventKu adalah sistem manajemen event yang lengkap dengan fitur authentication, review system, dashboard organizer, dan integrasi PostgreSQL database.
+EventKu adalah sistem manajemen event yang lengkap dengan fitur authentication, review system, dashboard organizer, dan integrasi database. Dibangun dengan Next.js untuk performa dan pengalaman pengguna yang optimal.
 
 ## 🚀 Fitur Utama
 
@@ -13,8 +13,8 @@ EventKu adalah sistem manajemen event yang lengkap dengan fitur authentication, 
 ### 🎫 Event Management
 - CRUD operations untuk events
 - Kategori event (musik, teknologi, olahraga, seni, bisnis, makanan)
-- Upload gambar event
 - Event rating dan review system
+- Real-time event updates
 
 ### 💳 Transaction System
 - Pembelian tiket dengan points system
@@ -31,36 +31,30 @@ EventKu adalah sistem manajemen event yang lengkap dengan fitur authentication, 
 - Overview statistik (revenue, events, customers)
 - Event management (edit, delete, view attendees)
 - Transaction management (approve/reject payments)
-- Visual charts untuk revenue dan ticket sales
 - Event performance analytics
-
-### 📧 Notification System
-- Email notifications untuk transaction status
-- In-app notifications
-- Real-time updates
 
 ## 🛠️ Tech Stack
 
-### Backend
-- **Node.js** dengan Express.js
-- **PostgreSQL** database
+### Frontend & Backend (Full-Stack Next.js)
+- **Next.js 16** dengan React 18
+- **API Routes** untuk backend functionality
+- **Prisma ORM** untuk database management
 - **JWT** untuk authentication
 - **bcrypt** untuk password hashing
-- **multer** untuk file uploads
-- **nodemailer** untuk email notifications
+- **Responsive design** dengan CSS modules
 
-### Frontend
-- **HTML5, CSS3, JavaScript** (Vanilla)
-- **Responsive design** dengan mobile support
-- **Modal-based UI** untuk better UX
+### Database
+- **PostgreSQL** (production)
+- **SQLite** (development fallback)
+- **Prisma** sebagai ORM
 
 ## 📋 Prerequisites
 
 Sebelum menjalankan aplikasi, pastikan Anda telah menginstall:
 
-- **Node.js** (v14 atau lebih baru)
-- **PostgreSQL** (v12 atau lebih baru)
+- **Node.js** (v18 atau lebih baru)
 - **npm** atau **yarn**
+- **PostgreSQL** (opsional, akan menggunakan fallback jika tidak tersedia)
 
 ## 🔧 Installation & Setup
 
@@ -75,274 +69,167 @@ cd eventku
 npm install
 ```
 
-### 3. Setup PostgreSQL Database
+### 3. Environment Configuration
 
-#### Buat Database
-```sql
--- Login ke PostgreSQL sebagai superuser
-psql -U postgres
-
--- Buat database
-CREATE DATABASE eventku_db;
-
--- Buat user (opsional)
-CREATE USER eventku_user WITH PASSWORD 'your_password';
-GRANT ALL PRIVILEGES ON DATABASE eventku_db TO eventku_user;
-```
-
-### 4. Environment Configuration
-
-Salin file `.env` dan sesuaikan konfigurasi:
+Salin file environment dan sesuaikan:
 
 ```bash
-cp .env.example .env
+cp .env.example .env.local
 ```
 
-Edit file `.env`:
+Edit file `.env.local`:
 ```env
-# Database Configuration
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=eventku_db
-DB_USER=postgres
-DB_PASSWORD=your_actual_password
+# JWT Secret
+JWT_SECRET="your-super-secret-jwt-key-here"
 
-# JWT Secret (generate random string)
-JWT_SECRET=your_very_secure_jwt_secret_key
+# Database (opsional - akan menggunakan fallback jika tidak ada)
+DATABASE_URL="postgresql://username:password@localhost:5432/eventku_db"
 
-# Email Configuration (opsional)
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASS=your_app_password
-
-# Server Configuration
-PORT=3000
-NODE_ENV=development
+# Next.js
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="your-nextauth-secret-here"
 ```
 
-### 5. Initialize Database
+### 4. Setup Database (Opsional)
 
-Jalankan script untuk membuat schema dan sample data:
+Jika Anda ingin menggunakan PostgreSQL:
 
 ```bash
-npm run init-db
+# Generate Prisma client
+npm run db:generate
+
+# Push schema ke database
+npm run db:push
+
+# Seed database dengan sample data
+npm run db:seed
 ```
 
-Script ini akan:
-- Membuat semua tabel yang diperlukan
-- Membuat indexes untuk performa optimal
-- Membuat triggers untuk auto-update timestamps
-- Insert sample data (users, events, reviews, transactions)
+### 5. Start Development Server
 
-### 6. Create Upload Directories
-
-```bash
-mkdir -p uploads/payment-proofs
-```
-
-### 7. Start Server
-
-#### Development Mode
 ```bash
 npm run dev
 ```
 
-#### Production Mode
-```bash
-npm start
+Aplikasi akan berjalan di `http://localhost:3000`
+
+## 📚 API Routes
+
+### Authentication
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+
+### Events
+- `GET /api/events` - Get all events
+- `POST /api/events` - Create event (organizer only)
+- `GET /api/events/[id]` - Get event by ID
+
+### Admin
+- `GET /api/admin/transactions/pending` - Get pending transactions
+
+## 🗂️ Project Structure
+
+```
+├── pages/
+│   ├── api/                 # Next.js API routes
+│   │   ├── auth/           # Authentication endpoints
+│   │   ├── events.js       # Events API
+│   │   └── admin/          # Admin endpoints
+│   ├── index.js            # Homepage
+│   ├── admin.js            # Admin panel
+│   └── _app.js             # App wrapper
+├── lib/
+│   └── prisma-client.js    # Prisma client configuration
+├── prisma/
+│   ├── schema.prisma       # Database schema
+│   └── seed.js             # Database seeding
+├── styles.css              # Global styles
+└── next.config.js          # Next.js configuration
 ```
 
-Server akan berjalan di `http://localhost:3000`
+## 🎯 Key Features
 
-## 📚 API Documentation
+### 1. Integrated Full-Stack Architecture
+- Frontend dan backend dalam satu aplikasi Next.js
+- API routes untuk semua backend functionality
+- Shared utilities dan configurations
 
-### Authentication Endpoints
+### 2. Database Flexibility
+- Prisma ORM untuk type-safe database operations
+- Support PostgreSQL untuk production
+- Fallback ke mock data untuk development
 
-#### Register
-```http
-POST /api/auth/register
-Content-Type: application/json
+### 3. Modern React Patterns
+- Functional components dengan hooks
+- State management dengan useState dan useEffect
+- Client-side routing dengan Next.js
 
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "password123",
-  "role": "customer",
-  "referralCode": "ADMIN001"
-}
-```
-
-#### Login
-```http
-POST /api/auth/login
-Content-Type: application/json
-
-{
-  "email": "john@example.com",
-  "password": "password123"
-}
-```
-
-### Event Endpoints
-
-#### Get All Events
-```http
-GET /api/events?category=musik&search=jazz&limit=10&offset=0
-```
-
-#### Create Event (Organizer only)
-```http
-POST /api/events
-Authorization: Bearer <jwt_token>
-Content-Type: application/json
-
-{
-  "title": "Konser Jazz Malam",
-  "description": "Event musik jazz terbaik",
-  "date": "2025-12-15",
-  "time": "19:00",
-  "location": "Jakarta Convention Center",
-  "category": "musik",
-  "price": 250000,
-  "availableSeats": 500,
-  "icon": "🎵"
-}
-```
-
-### Transaction Endpoints
-
-#### Create Transaction (Customer only)
-```http
-POST /api/transactions
-Authorization: Bearer <jwt_token>
-Content-Type: application/json
-
-{
-  "eventId": 1,
-  "quantity": 2,
-  "pointsUsed": 50000
-}
-```
-
-#### Upload Payment Proof
-```http
-POST /api/transactions/:id/payment-proof
-Authorization: Bearer <jwt_token>
-Content-Type: multipart/form-data
-
-paymentProof: <image_file>
-```
-
-### Dashboard Endpoints (Organizer only)
-
-#### Get Overview Stats
-```http
-GET /api/dashboard/overview
-Authorization: Bearer <jwt_token>
-```
-
-#### Get Revenue Statistics
-```http
-GET /api/dashboard/revenue-stats?year=2025
-Authorization: Bearer <jwt_token>
-```
-
-## 👥 Default Users
-
-Setelah menjalankan `npm run init-db`, Anda dapat login dengan:
-
-### Organizer Account
-- **Email**: `admin@eventku.com`
-- **Password**: `admin123`
-- **Role**: Organizer
-- **Features**: Dashboard, create events, manage transactions
-
-### Customer Account
-- **Email**: `customer@demo.com`
-- **Password**: `demo123`
-- **Role**: Customer
-- **Points**: 75,000
-- **Features**: Buy tickets, write reviews, view transactions
-
-## 🗂️ Database Schema
-
-### Main Tables
-- **users** - User accounts dengan authentication
-- **organizers** - Extended info untuk organizers
-- **events** - Event data dengan ratings
-- **transactions** - Ticket purchases dan payments
-- **reviews** - Event reviews dan ratings
-- **notifications** - User notifications
-
-### Key Features
-- **Foreign key constraints** untuk data integrity
-- **Triggers** untuk auto-update ratings dan timestamps
-- **Indexes** untuk query performance
-- **Functions** untuk business logic (referral codes, ratings)
-
-## 🔒 Security Features
-
-- **JWT Authentication** dengan expiration
-- **Password hashing** dengan bcrypt
-- **Role-based authorization**
-- **SQL injection protection** dengan parameterized queries
-- **File upload validation**
-- **CORS configuration**
-
-## 📱 Frontend Features
-
-- **Responsive design** untuk mobile dan desktop
-- **Modal-based UI** untuk better UX
-- **Real-time updates** untuk dashboard
-- **Interactive charts** untuk statistics
-- **File upload** dengan preview
-- **Form validation**
+### 4. Responsive Design
+- Mobile-first approach
+- CSS Grid dan Flexbox untuk layouts
+- Optimized untuk semua device sizes
 
 ## 🚀 Deployment
 
-### Production Setup
+### Vercel (Recommended)
+```bash
+# Install Vercel CLI
+npm i -g vercel
 
-1. **Environment Variables**
-```env
-NODE_ENV=production
-DB_HOST=your_production_db_host
-DB_PASSWORD=secure_production_password
-JWT_SECRET=very_secure_production_jwt_secret
+# Deploy
+vercel
 ```
 
-2. **Database Migration**
+### Manual Deployment
 ```bash
-npm run init-db
-```
+# Build aplikasi
+npm run build
 
-3. **Start Production Server**
-```bash
+# Start production server
 npm start
 ```
 
-### Docker Deployment (Optional)
+## 🔒 Security Features
 
-```dockerfile
-FROM node:16-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-EXPOSE 3000
-CMD ["npm", "start"]
+- **JWT Authentication** dengan secure tokens
+- **Password hashing** dengan bcrypt
+- **Environment variables** untuk sensitive data
+- **API route protection** dengan middleware
+- **Input validation** pada semua endpoints
+
+## 📱 Pages & Features
+
+### Homepage (`/`)
+- Event listing dengan search dan filter
+- Responsive event cards
+- User authentication status
+- Real-time event updates
+
+### Admin Panel (`/admin`)
+- Transaction management
+- Payment approval/rejection
+- Real-time updates
+- Admin-only access
+
+## 🧪 Development
+
+### Available Scripts
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run start        # Start production server
+npm run lint         # Run ESLint
+npm run db:generate  # Generate Prisma client
+npm run db:push      # Push schema to database
+npm run db:seed      # Seed database
+npm run db:studio    # Open Prisma Studio
 ```
 
-## 🧪 Testing
-
-### Manual Testing
-1. Register sebagai customer dan organizer
-2. Login dengan kedua role
-3. Test semua fitur (create event, buy ticket, review, dashboard)
-4. Test transaction flow (payment upload, approval/rejection)
-
-### API Testing dengan Postman
-Import collection dari `postman/EventKu.postman_collection.json`
+### Development Features
+- Hot reloading dengan Next.js
+- API routes dengan built-in middleware
+- TypeScript support (optional)
+- Prisma Studio untuk database management
 
 ## 🤝 Contributing
 
@@ -356,33 +243,6 @@ Import collection dari `postman/EventKu.postman_collection.json`
 
 This project is licensed under the MIT License.
 
-## 📞 Support
-
-Jika Anda mengalami masalah atau memiliki pertanyaan:
-
-1. Check dokumentasi API di atas
-2. Periksa logs di console untuk error messages
-3. Pastikan database connection sudah benar
-4. Verify environment variables sudah sesuai
-
-## 🔄 Updates & Maintenance
-
-### Database Backup
-```bash
-pg_dump -U postgres eventku_db > backup.sql
-```
-
-### Database Restore
-```bash
-psql -U postgres eventku_db < backup.sql
-```
-
-### Update Dependencies
-```bash
-npm update
-npm audit fix
-```
-
 ---
 
-**EventKu** - Sistem manajemen event modern dengan PostgreSQL integration 🎉
+**EventKu** - Modern event management system dengan Next.js 🎉
