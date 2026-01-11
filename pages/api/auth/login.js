@@ -1,7 +1,3 @@
-import bcrypt from 'bcrypt'
-import jwt from 'jsonwebtoken'
-import { prisma } from '../../../lib/prisma-client'
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' })
@@ -10,19 +6,30 @@ export default async function handler(req, res) {
   try {
     const { email, password } = req.body
 
-    // Get user from database
-    const user = await prisma.user.findUnique({
-      where: { email },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        password: true,
-        role: true,
-        points: true,
-        referralCode: true
+    // Mock authentication for demo
+    // In production, this would check against database
+    const mockUsers = [
+      {
+        id: 1,
+        name: 'Admin User',
+        email: 'admin@eventku.com',
+        password: 'admin123', // In real app, this would be hashed
+        role: 'ORGANIZER',
+        points: 0,
+        referralCode: 'ADMIN001'
+      },
+      {
+        id: 2,
+        name: 'Customer Demo',
+        email: 'customer@demo.com',
+        password: 'demo123',
+        role: 'CUSTOMER',
+        points: 75000,
+        referralCode: 'CUST001'
       }
-    })
+    ]
+
+    const user = mockUsers.find(u => u.email === email && u.password === password)
 
     if (!user) {
       return res.status(401).json({
@@ -31,21 +38,8 @@ export default async function handler(req, res) {
       })
     }
 
-    // Check password
-    const isValidPassword = await bcrypt.compare(password, user.password)
-    if (!isValidPassword) {
-      return res.status(401).json({
-        success: false,
-        message: 'Email atau password salah!'
-      })
-    }
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: user.id, role: user.role },
-      process.env.JWT_SECRET || 'fallback-secret',
-      { expiresIn: '24h' }
-    )
+    // Generate mock JWT token (in production, use proper JWT)
+    const token = `mock-jwt-token-${user.id}-${Date.now()}`
 
     // Remove password from response
     const { password: _, ...userWithoutPassword } = user

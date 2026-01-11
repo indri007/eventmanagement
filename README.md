@@ -138,8 +138,7 @@ Aplikasi akan berjalan di `http://localhost:3000`
 │   ├── index.js            # Homepage
 │   ├── admin.js            # Admin panel
 │   └── _app.js             # App wrapper
-├── lib/
-│   └── prisma-client.js    # Prisma client configuration
+├── lib/                     # Utilities (optional)
 ├── prisma/
 │   ├── schema.prisma       # Database schema
 │   └── seed.js             # Database seeding
