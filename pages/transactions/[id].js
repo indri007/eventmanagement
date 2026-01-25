@@ -87,29 +87,48 @@ export default function TransactionDetail() {
 
     try {
       setUploading(true)
-      const formData = new FormData()
-      formData.append('paymentProof', paymentProof)
+      
+      // Convert file to base64
+      const fileReader = new FileReader()
+      fileReader.onload = async (e) => {
+        const base64Data = e.target.result.split(',')[1] // Remove data:image/jpeg;base64, prefix
+        
+        const uploadData = {
+          fileData: base64Data,
+          fileName: paymentProof.name,
+          fileType: paymentProof.type
+        }
 
-      const token = localStorage.getItem('token')
-      const response = await fetch(`/api/transactions/${id}/upload-proof`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      })
+        const token = localStorage.getItem('token')
+        const response = await fetch(`/api/transactions/${id}/upload-proof-base64`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(uploadData)
+        })
 
-      if (response.ok) {
-        alert('Bukti pembayaran berhasil diupload!')
-        loadTransaction() // Reload transaction data
-        setPaymentProof(null)
-      } else {
-        const result = await response.json()
-        alert(result.message || 'Gagal upload bukti pembayaran')
+        if (response.ok) {
+          alert('Bukti pembayaran berhasil diupload!')
+          loadTransaction() // Reload transaction data
+          setPaymentProof(null)
+        } else {
+          const result = await response.json()
+          alert(result.message || 'Gagal upload bukti pembayaran')
+        }
+        setUploading(false)
       }
+      
+      fileReader.onerror = () => {
+        alert('Gagal membaca file')
+        setUploading(false)
+      }
+      
+      fileReader.readAsDataURL(paymentProof)
+
     } catch (error) {
       alert('Terjadi kesalahan saat upload')
-    } finally {
       setUploading(false)
     }
   }

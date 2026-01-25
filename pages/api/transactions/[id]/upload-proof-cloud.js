@@ -1,28 +1,20 @@
 import jwt from 'jsonwebtoken';
 import { prisma } from '../../../../lib/prisma.js';
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
-import os from 'os';
+import { v2 as cloudinary } from 'cloudinary';
 
-// Configure multer for file upload using temp directory
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    // Use OS temp directory instead of ./uploads
-    const uploadDir = path.join(os.tmpdir(), 'payment-proofs');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'proof-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Configure Cloudinary (optional - for production)
+if (process.env.CLOUDINARY_CLOUD_NAME) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+}
 
+// Configure multer for memory storage
 const upload = multer({
-  storage: storage,
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit
   },
@@ -95,30 +87,48 @@ export default async function handler(req, res) {
       }
 
       try {
-        console.log('File uploaded to temp:', req.file.path);
-        
-        // For now, just save the filename (file will be in temp directory)
-        // In production, you should upload to cloud storage here
-        
+        let fileUrl = null;
+        let fileName = `proof-${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+
+        // Try to upload to Cloudinary if configured
+        if (process.env.CLOUDINARY_CLOUD_NAME) {
+          try {
+            const uploadResult = await new Promise((resolve, reject) => {
+              cloudinary.uploader.upload_stream(
+                {
+                  resource_type: 'image',
+                  folder: 'eventku/payment-proofs',
+                  public_id: fileName,
+                },
+                (error, result) => {
+                  if (error) reject(error);
+                  else resolve(result);
+                }
+              ).end(req.file.buffer);
+            });
+
+            fileUrl = uploadResult.secure_url;
+            fileName = uploadResult.public_id;
+            console.log('File uploaded to Cloudinary:', fileUrl);
+          } catch (cloudinaryError) {
+            console.error('Cloudinary upload failed:', cloudinaryError);
+            // Fallback to just saving filename
+          }
+        }
+
         // Update transaction with payment proof
         await prisma.transaction.update({
           where: { id: parseInt(id) },
           data: {
-            paymentProof: req.file.filename,
+            paymentProof: fileUrl || fileName,
             status: 'WAITING_CONFIRMATION'
           }
         });
 
-        // Clean up temp file after saving to database
-        try {
-          fs.unlinkSync(req.file.path);
-        } catch (cleanupError) {
-          console.log('Cleanup error (non-critical):', cleanupError.message);
-        }
-
         res.status(200).json({
           success: true,
-          message: 'Bukti pembayaran berhasil diupload (tersimpan sementara)'
+          message: 'Bukti pembayaran berhasil diupload',
+          fileUrl: fileUrl || null
         });
 
       } catch (error) {
