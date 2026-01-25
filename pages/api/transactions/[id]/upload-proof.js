@@ -78,6 +78,8 @@ export default async function handler(req, res) {
       where: { id: parseInt(id) },
       data: {
         paymentProof: uniqueFileName,
+        paymentProofData: fileData, // Store Base64 data
+        paymentProofType: fileType, // Store MIME type
         status: 'WAITING_CONFIRMATION'
       }
     });

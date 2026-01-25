@@ -79,13 +79,19 @@ export default function OrganizerDashboard() {
   const handleTransactionAction = async (transactionId, action) => {
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch(`/api/dashboard/organizer/transactions/${transactionId}`, {
-        method: 'PATCH',
+      const endpoint = action === 'approve' 
+        ? `/api/transactions/${transactionId}/approve`
+        : `/api/transactions/${transactionId}/reject`
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ action })
+        body: JSON.stringify({ 
+          reason: action === 'reject' ? 'Bukti pembayaran tidak valid' : undefined 
+        })
       })
 
       if (response.ok) {
@@ -97,6 +103,39 @@ export default function OrganizerDashboard() {
       }
     } catch (error) {
       alert('Terjadi kesalahan saat memproses transaksi')
+    }
+  }
+
+  const viewPaymentProof = async (transactionId) => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`/api/transactions/${transactionId}/payment-proof`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+
+      if (response.ok) {
+        // Create a blob URL for the image
+        const blob = await response.blob()
+        const imageUrl = URL.createObjectURL(blob)
+        
+        // Open in new window
+        const newWindow = window.open()
+        newWindow.document.write(`
+          <html>
+            <head><title>Bukti Pembayaran</title></head>
+            <body style="margin:0; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f0f0f0;">
+              <img src="${imageUrl}" style="max-width:100%; max-height:100%; object-fit:contain;" alt="Bukti Pembayaran" />
+            </body>
+          </html>
+        `)
+        newWindow.document.close()
+      } else {
+        const result = await response.json()
+        alert(result.message || 'Gagal memuat bukti pembayaran')
+      }
+    } catch (error) {
+      console.error('Error viewing payment proof:', error)
+      alert('Terjadi kesalahan saat memuat bukti pembayaran')
     }
   }
 
@@ -261,9 +300,12 @@ export default function OrganizerDashboard() {
                           </td>
                           <td>
                             {transaction.paymentProof ? (
-                              <a href={`/uploads/payment-proofs/${transaction.paymentProof}`} target="_blank" rel="noopener noreferrer">
+                              <button 
+                                className="btn-small btn-view-proof"
+                                onClick={() => viewPaymentProof(transaction.id)}
+                              >
                                 Lihat Bukti
-                              </a>
+                              </button>
                             ) : (
                               'Belum upload'
                             )}
