@@ -91,36 +91,50 @@ export default function TransactionDetail() {
       // Convert file to base64
       const fileReader = new FileReader()
       fileReader.onload = async (e) => {
-        const base64Data = e.target.result.split(',')[1] // Remove data:image/jpeg;base64, prefix
-        
-        const uploadData = {
-          fileData: base64Data,
-          fileName: paymentProof.name,
-          fileType: paymentProof.type
-        }
+        try {
+          const base64Data = e.target.result.split(',')[1] // Remove data:image/jpeg;base64, prefix
+          
+          const uploadData = {
+            fileData: base64Data,
+            fileName: paymentProof.name,
+            fileType: paymentProof.type
+          }
 
-        const token = localStorage.getItem('token')
-        const response = await fetch(`/api/transactions/${id}/upload-proof-base64`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(uploadData)
-        })
+          console.log('Uploading file:', paymentProof.name, 'Type:', paymentProof.type)
 
-        if (response.ok) {
-          alert('Bukti pembayaran berhasil diupload!')
-          loadTransaction() // Reload transaction data
-          setPaymentProof(null)
-        } else {
+          const token = localStorage.getItem('token')
+          const response = await fetch(`/api/transactions/${id}/upload-proof`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(uploadData)
+          })
+
           const result = await response.json()
-          alert(result.message || 'Gagal upload bukti pembayaran')
+          
+          if (response.ok) {
+            alert('Bukti pembayaran berhasil diupload!')
+            loadTransaction() // Reload transaction data
+            setPaymentProof(null)
+            // Reset file input
+            const fileInput = document.querySelector('input[type="file"]')
+            if (fileInput) fileInput.value = ''
+          } else {
+            console.error('Upload failed:', result)
+            alert(result.message || 'Gagal upload bukti pembayaran')
+          }
+        } catch (uploadError) {
+          console.error('Upload error:', uploadError)
+          alert('Terjadi kesalahan saat upload: ' + uploadError.message)
+        } finally {
+          setUploading(false)
         }
-        setUploading(false)
       }
       
-      fileReader.onerror = () => {
+      fileReader.onerror = (error) => {
+        console.error('FileReader error:', error)
         alert('Gagal membaca file')
         setUploading(false)
       }
@@ -128,7 +142,8 @@ export default function TransactionDetail() {
       fileReader.readAsDataURL(paymentProof)
 
     } catch (error) {
-      alert('Terjadi kesalahan saat upload')
+      console.error('Upload process error:', error)
+      alert('Terjadi kesalahan saat memproses upload')
       setUploading(false)
     }
   }
