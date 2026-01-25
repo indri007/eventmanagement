@@ -6,9 +6,4 @@ export default defineConfig({
   datasource: {
     url: env('DATABASE_URL'),
   },
-  generator: {
-    output: process.env.NODE_ENV === 'production' 
-      ? './node_modules/.prisma/client' 
-      : './src/generated/prisma'
-  }
 });
