@@ -9,12 +9,16 @@ export default async function handler(req, res) {
   try {
     const { name, email, password, role, referralCode } = req.body;
 
+    console.log('Register attempt for email:', email, 'role:', role);
+
     // Validate input
     if (!name || !email || !password) {
+      console.log('Missing required fields');
       return res.status(400).json({ message: 'Nama, email, dan password harus diisi' });
     }
 
     if (password.length < 6) {
+      console.log('Password too short');
       return res.status(400).json({ message: 'Password minimal 6 karakter' });
     }
 
@@ -24,11 +28,14 @@ export default async function handler(req, res) {
     });
 
     if (existingUser) {
+      console.log('User already exists:', email);
       return res.status(400).json({ message: 'Email sudah terdaftar' });
     }
 
     // Hash password
+    console.log('Hashing password...');
     const hashedPassword = await bcrypt.hash(password, 10);
+    console.log('Password hashed successfully');
 
     // Generate unique referral code
     const generateReferralCode = () => {
@@ -51,12 +58,15 @@ export default async function handler(req, res) {
       });
     }
 
+    console.log('Generated referral code:', newReferralCode);
+
     // Handle referral if provided
     let referrerUser = null;
     if (referralCode) {
       referrerUser = await prisma.user.findUnique({
         where: { referralCode }
       });
+      console.log('Referrer found:', referrerUser ? 'Yes' : 'No');
     }
 
     // Create user
@@ -70,9 +80,12 @@ export default async function handler(req, res) {
       referredBy: referrerUser?.id || null
     };
 
+    console.log('Creating user...');
     const newUser = await prisma.user.create({
       data: userData
     });
+
+    console.log('User created with ID:', newUser.id);
 
     // Update referrer's points and referral count
     if (referrerUser) {
@@ -83,6 +96,7 @@ export default async function handler(req, res) {
           totalReferrals: { increment: 1 }
         }
       });
+      console.log('Updated referrer points');
     }
 
     // Create organizer profile if role is ORGANIZER
@@ -96,7 +110,10 @@ export default async function handler(req, res) {
           totalReviews: 0
         }
       });
+      console.log('Created organizer profile');
     }
+
+    console.log('Registration successful for:', email);
 
     res.status(201).json({
       success: true,
@@ -113,6 +130,6 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Register error:', error);
-    res.status(500).json({ message: 'Terjadi kesalahan server' });
+    res.status(500).json({ message: 'Terjadi kesalahan server: ' + error.message });
   }
 }
