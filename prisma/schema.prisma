@@ -1,13 +1,18 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+//generator client {
+//  provider = "prisma-client-js"
+//}
+
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client" // Sangat disarankan ganti ke 'prisma-client' di v7
+  output   = "../src/generated/prisma" // v7 mewajibkan kolom 'output'
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // url      = env("DATABASE_URL")
 }
 
 model User {

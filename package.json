@@ -1,19 +1,22 @@
 {
   "name": "eventku-backend",
   "version": "1.0.0",
+  "type": "module",
   "description": "EventKu Backend API with PostgreSQL",
   "main": "server.js",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "node prisma/seed.js",
+    "db:seed": "node prisma/seed.mjs",
     "db:studio": "prisma studio",
-    "db:reset": "prisma migrate reset --force"
+    "db:reset": "prisma migrate reset --force",
+    "postinstall": "prisma generate",
+    "vercel-build": "prisma generate && prisma db push && next build"
   },
   "keywords": [
     "event",
@@ -23,24 +26,28 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@prisma/client": "^5.22.0",
+    "@prisma/adapter-pg": "^7.3.0",
+    "@prisma/client": "^7.3.0",
+    "@prisma/config": "^7.3.0",
     "bcrypt": "^5.1.1",
     "better-sqlite3": "^12.5.0",
     "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
+    "dotenv": "^16.6.1",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
     "next": "^16.1.1",
     "nodemailer": "^6.9.7",
-    "pg": "^8.11.3",
-    "prisma": "^5.22.0",
+    "pg": "^8.17.2",
+    "prisma": "^7.3.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
   },
   "devDependencies": {
     "@types/node": "^25.0.6",
+    "@types/pg": "^8.16.0",
     "@types/react": "^19.2.8",
+    "dotenv-cli": "^11.0.0",
     "nodemon": "^3.0.2",
     "typescript": "^5.9.3"
   }

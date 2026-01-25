@@ -1,7 +1,10 @@
 import Head from 'next/head'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/router'
+import Link from 'next/link'
 
 export default function Home() {
+  const router = useRouter()
   const [events, setEvents] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
@@ -20,10 +23,18 @@ export default function Home() {
     loadEvents()
   }, [])
 
-  const loadEvents = async () => {
+  const loadEvents = async (searchQuery = '', categoryQuery = '') => {
     try {
       setLoading(true)
-      const response = await fetch('/api/events')
+      
+      // Build query parameters
+      const params = new URLSearchParams()
+      if (searchQuery) params.append('search', searchQuery)
+      if (categoryQuery) params.append('category', categoryQuery)
+      
+      const url = `/api/events${params.toString() ? `?${params.toString()}` : ''}`
+      const response = await fetch(url)
+      
       if (response.ok) {
         const result = await response.json()
         setEvents(result.data || [])
@@ -37,17 +48,28 @@ export default function Home() {
 
   const handleSearch = () => {
     // Filter events based on search term and category
-    loadEvents()
+    loadEvents(searchTerm, categoryFilter)
+  }
+
+  // Handle Enter key press in search input
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch()
+    }
+  }
+
+  const clearSearch = () => {
+    setSearchTerm('')
+    setCategoryFilter('')
+    loadEvents('', '')
   }
 
   const showLogin = () => {
-    // Show login modal (you can implement modal state here)
-    alert('Login modal would open here')
+    window.location.href = '/auth/login'
   }
 
   const showRegister = () => {
-    // Show register modal
-    alert('Register modal would open here')
+    window.location.href = '/auth/register'
   }
 
   const logout = () => {
@@ -77,7 +99,7 @@ export default function Home() {
               {user ? (
                 <>
                   <a href="#" className="nav-link">Dashboard</a>
-                  <a href="#" className="nav-link">Transaksi Saya</a>
+                  <Link href="/my-transactions" className="nav-link">Transaksi Saya</Link>
                   <span className="nav-link">Points: {user.points?.toLocaleString('id-ID') || 0}</span>
                   <a href="#" className="nav-link" onClick={logout}>Logout</a>
                 </>
@@ -105,20 +127,32 @@ export default function Home() {
                 placeholder="Cari event..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyPress={handleKeyPress}
               />
               <select 
                 value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
+                onChange={(e) => {
+                  setCategoryFilter(e.target.value)
+                  // Auto-search when category changes
+                  setTimeout(() => loadEvents(searchTerm, e.target.value), 100)
+                }}
               >
                 <option value="">Semua Kategori</option>
-                <option value="musik">Musik</option>
-                <option value="teknologi">Teknologi</option>
-                <option value="olahraga">Olahraga</option>
-                <option value="seni">Seni & Budaya</option>
-                <option value="bisnis">Bisnis</option>
-                <option value="makanan">Makanan & Minuman</option>
+                <option value="MUSIK">Musik</option>
+                <option value="TEKNOLOGI">Teknologi</option>
+                <option value="OLAHRAGA">Olahraga</option>
+                <option value="SENI">Seni & Budaya</option>
+                <option value="BISNIS">Bisnis</option>
+                <option value="MAKANAN">Makanan & Minuman</option>
               </select>
-              <button onClick={handleSearch}>Cari</button>
+              <button onClick={handleSearch} className="search-btn" disabled={loading}>
+                {loading ? '⏳ Mencari...' : '🔍 Cari'}
+              </button>
+              {(searchTerm || categoryFilter) && (
+                <button onClick={clearSearch} className="clear-btn" disabled={loading}>
+                  ✖️ Reset
+                </button>
+              )}
             </div>
           </div>
         </section>
@@ -126,7 +160,28 @@ export default function Home() {
         {/* Events Grid */}
         <section className="events-section">
           <div className="container">
-            <h3>Event Populer</h3>
+            <div className="section-header">
+              <h3>
+                {searchTerm || categoryFilter ? 'Hasil Pencarian' : 'Event Populer'}
+                {events.length > 0 && (searchTerm || categoryFilter) && (
+                  <span className="search-count"> ({events.length} event ditemukan)</span>
+                )}
+              </h3>
+              {(searchTerm || categoryFilter) && (
+                <div className="search-info">
+                  {searchTerm && <span className="search-tag">🔍 "{searchTerm}"</span>}
+                  {categoryFilter && <span className="search-tag">📂 {
+                    categoryFilter === 'MUSIK' ? 'Musik' :
+                    categoryFilter === 'TEKNOLOGI' ? 'Teknologi' :
+                    categoryFilter === 'OLAHRAGA' ? 'Olahraga' :
+                    categoryFilter === 'SENI' ? 'Seni & Budaya' :
+                    categoryFilter === 'BISNIS' ? 'Bisnis' :
+                    categoryFilter === 'MAKANAN' ? 'Makanan & Minuman' :
+                    categoryFilter
+                  }</span>}
+                </div>
+              )}
+            </div>
             {loading ? (
               <div style={{ textAlign: 'center', padding: '2rem' }}>
                 <p>Memuat events...</p>
@@ -139,20 +194,37 @@ export default function Home() {
                   </div>
                 ) : (
                   events.map((event) => (
-                    <div key={event.id} className="event-card">
-                      <div className="event-icon">{event.icon || '🎉'}</div>
-                      <h4>{event.title}</h4>
-                      <p>{event.description}</p>
-                      <div className="event-details">
-                        <span>📅 {new Date(event.date).toLocaleDateString('id-ID')}</span>
-                        {event.time && <span>🕐 {event.time}</span>}
-                        <span>📍 {event.location}</span>
-                        <span>💰 {event.price ? `Rp ${event.price.toLocaleString('id-ID')}` : 'Gratis'}</span>
-                        <span>🎫 {event.availableSeats || 0} kursi tersisa</span>
+                    <div key={event.id} className="event-card" onClick={() => router.push(`/events/${event.id}`)}>
+                      <div className="event-image">
+                        <div className="event-icon">{event.icon || '🎉'}</div>
+                        <div className="event-category">{event.category}</div>
                       </div>
-                      <button className="btn-primary" style={{ marginTop: '1rem', width: '100%' }}>
-                        Lihat Detail
-                      </button>
+                      <div className="event-content">
+                        <h4 className="event-title">{event.title}</h4>
+                        <p className="event-description">{event.description}</p>
+                        <div className="event-details">
+                          <div className="event-info">
+                            <span className="event-date">📅 {new Date(event.date).toLocaleDateString('id-ID')}</span>
+                            {event.time && <span className="event-time">🕐 {event.time}</span>}
+                            <span className="event-location">📍 {event.location}</span>
+                          </div>
+                          <div className="event-meta">
+                            <span className="event-price">
+                              {event.price ? `Rp ${event.price.toLocaleString('id-ID')}` : 'GRATIS'}
+                            </span>
+                            <span className="event-seats">🎫 {event.availableSeats || 0} kursi tersisa</span>
+                            {event.averageRating > 0 && (
+                              <span className="event-rating">⭐ {event.averageRating.toFixed(1)} ({event.totalReviews})</span>
+                            )}
+                          </div>
+                        </div>
+                        <button className="btn-primary event-btn" onClick={(e) => {
+                          e.stopPropagation()
+                          router.push(`/events/${event.id}`)
+                        }}>
+                          Lihat Detail & Beli Tiket
+                        </button>
+                      </div>
                     </div>
                   ))
                 )}

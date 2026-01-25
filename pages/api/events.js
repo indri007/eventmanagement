@@ -1,90 +1,72 @@
-// Next.js API route for events
+import jwt from 'jsonwebtoken';
+import { prisma } from '../../lib/prisma.js';
+
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
-      // For now, return mock data since Prisma might not be configured
-      const mockEvents = [
-        {
-          id: 1,
-          title: 'Konser Musik Jazz',
-          description: 'Nikmati malam yang indah dengan musik jazz terbaik',
-          date: '2025-02-15',
-          time: '19:00',
-          location: 'Jakarta Convention Center',
-          price: 150000,
-          category: 'musik',
-          availableSeats: 100,
-          totalSeats: 150,
-          icon: '🎵'
-        },
-        {
-          id: 2,
-          title: 'Workshop Web Development',
-          description: 'Belajar membuat website modern dengan React dan Next.js',
-          date: '2025-02-20',
-          time: '09:00',
-          location: 'Tech Hub Jakarta',
-          price: 200000,
-          category: 'teknologi',
-          availableSeats: 25,
-          totalSeats: 30,
-          icon: '💻'
-        },
-        {
-          id: 3,
-          title: 'Festival Makanan Nusantara',
-          description: 'Jelajahi cita rasa kuliner tradisional Indonesia',
-          date: '2025-02-25',
-          time: '10:00',
-          location: 'Taman Mini Indonesia Indah',
-          price: 75000,
-          category: 'makanan',
-          availableSeats: 200,
-          totalSeats: 300,
-          icon: '🍜'
-        },
-        {
-          id: 4,
-          title: 'Turnamen E-Sports Mobile Legends',
-          description: 'Kompetisi gaming terbesar tahun ini',
-          date: '2025-03-01',
-          time: '13:00',
-          location: 'Jakarta International Expo',
-          price: 50000,
-          category: 'olahraga',
-          availableSeats: 500,
-          totalSeats: 1000,
-          icon: '🎮'
-        }
-      ]
-
       const { category, search, limit = 50, offset = 0 } = req.query
-      let filteredEvents = mockEvents
-
-      // Filter by category
+      
+      // Build where clause for filtering
+      const where = {}
+      
+      // Filter by category (case insensitive)
       if (category) {
-        filteredEvents = filteredEvents.filter(event => event.category === category)
+        where.category = category
       }
-
-      // Filter by search term
+      
+      // Filter by search term (search in title, description, location)
       if (search) {
         const searchLower = search.toLowerCase()
-        filteredEvents = filteredEvents.filter(event => 
-          event.title.toLowerCase().includes(searchLower) ||
-          event.description.toLowerCase().includes(searchLower) ||
-          event.location.toLowerCase().includes(searchLower)
-        )
+        where.OR = [
+          { title: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+          { location: { contains: search, mode: 'insensitive' } }
+        ]
       }
-
-      // Apply pagination
-      const startIndex = parseInt(offset)
-      const endIndex = startIndex + parseInt(limit)
-      const paginatedEvents = filteredEvents.slice(startIndex, endIndex)
+      
+      // Get events from database
+      const events = await prisma.event.findMany({
+        where,
+        include: {
+          organizer: {
+            select: {
+              name: true,
+              email: true
+            }
+          }
+        },
+        orderBy: {
+          date: 'asc'
+        },
+        skip: parseInt(offset),
+        take: parseInt(limit)
+      })
+      
+      // Get total count for pagination
+      const total = await prisma.event.count({ where })
+      
+      // Format events for frontend
+      const formattedEvents = events.map(event => ({
+        id: event.id,
+        title: event.title,
+        description: event.description,
+        date: event.date,
+        time: event.time,
+        location: event.location,
+        price: event.price,
+        category: event.category,
+        availableSeats: event.availableSeats,
+        totalSeats: event.totalSeats,
+        icon: event.icon,
+        averageRating: event.averageRating,
+        totalReviews: event.totalReviews,
+        organizer: event.organizer
+      }))
 
       res.status(200).json({
         success: true,
-        data: paginatedEvents,
-        total: filteredEvents.length
+        data: formattedEvents,
+        total
       })
     } catch (error) {
       console.error('Get events error:', error)
@@ -93,8 +75,70 @@ export default async function handler(req, res) {
         message: 'Terjadi kesalahan saat mengambil data event'
       })
     }
+  } else if (req.method === 'POST') {
+    try {
+      // Verify JWT token
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (!token) {
+        return res.status(401).json({ message: 'Token tidak ditemukan' });
+      }
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const userId = decoded.userId;
+
+      // Verify user is organizer
+      const user = await prisma.user.findUnique({
+        where: { id: userId }
+      });
+
+      if (!user || user.role !== 'ORGANIZER') {
+        return res.status(403).json({ message: 'Hanya organizer yang dapat membuat event' });
+      }
+
+      const { title, description, date, time, location, category, price, totalSeats, icon } = req.body;
+
+      // Validate input
+      if (!title || !description || !date || !time || !location || !category || !totalSeats) {
+        return res.status(400).json({ message: 'Semua field harus diisi' });
+      }
+
+      // Create event
+      const event = await prisma.event.create({
+        data: {
+          title,
+          description,
+          date: new Date(date),
+          time,
+          location,
+          category,
+          price: parseInt(price) || 0,
+          totalSeats: parseInt(totalSeats),
+          availableSeats: parseInt(totalSeats),
+          organizerId: userId,
+          icon: icon || '🎉'
+        }
+      });
+
+      // Update organizer total events
+      await prisma.organizer.update({
+        where: { userId },
+        data: {
+          totalEvents: { increment: 1 }
+        }
+      });
+
+      res.status(201).json({
+        success: true,
+        message: 'Event berhasil dibuat',
+        data: event
+      });
+
+    } catch (error) {
+      console.error('Create event error:', error);
+      res.status(500).json({ message: 'Terjadi kesalahan server' });
+    }
   } else {
-    res.setHeader('Allow', ['GET'])
+    res.setHeader('Allow', ['GET', 'POST'])
     res.status(405).end(`Method ${req.method} Not Allowed`)
   }
 }

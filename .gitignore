@@ -64,7 +64,7 @@ jspm_packages/
 # DynamoDB Local files
 .dynamodb/
 
-# Uploads
+# Uploads (keep structure but ignore files)
 uploads/payment-proofs/*
 !uploads/payment-proofs/.gitkeep
 
@@ -91,4 +91,10 @@ build/
 # Temporary files
 tmp/
 temp/
+
+# Prisma
 /generated/prisma
+/src/generated/prisma
+
+# Vercel
+.vercel
