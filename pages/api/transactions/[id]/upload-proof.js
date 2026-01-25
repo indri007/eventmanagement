@@ -73,18 +73,17 @@ export default async function handler(req, res) {
 
     console.log('Updating transaction with payment proof:', uniqueFileName);
 
-    // Update transaction with payment proof
+    // Update transaction with payment proof (store filename only for demo)
     await prisma.transaction.update({
       where: { id: parseInt(id) },
       data: {
         paymentProof: uniqueFileName,
-        paymentProofData: fileData, // Store Base64 data
-        paymentProofType: fileType, // Store MIME type
         status: 'WAITING_CONFIRMATION'
       }
     });
 
     console.log('Payment proof uploaded successfully:', uniqueFileName);
+    console.log('Base64 data received (length):', fileData.length, 'File type:', fileType);
 
     res.status(200).json({
       success: true,
